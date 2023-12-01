@@ -32,8 +32,8 @@ func main() {
 	// Upload a DICOM image
 	router.Post("/image", handleDicomImageUpload)
 	// Return information about the DICOM image
-	router.Get("/image/{imageId}/dicom", handleGetPngImageById)
-	// Return the image as a PNG
+	router.Get("/image/{imageId}/tags", handleGetPngImageById)
+	// Return PNG version of the image
 	router.Get("/image/{imageId}/png", handleGetPngImageById)
 
 	err := http.ListenAndServe(":3333", router)
