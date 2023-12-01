@@ -101,10 +101,11 @@ func handleGetImageById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "You do not have access to this", http.StatusForbidden)
 		return
 	}
+
 	imagePath := fmt.Sprintf("images/%s.png", imageId)
 	image, err := os.ReadFile(imagePath)
 	if err != nil {
-		if !os.IsExist(err) {
+		if os.IsNotExist(err) {
 			http.Error(w, "Requested image does not exist", http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
