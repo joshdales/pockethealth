@@ -140,6 +140,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 	img = db.UpdateDicomImage(img, filteredDataset)
 
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(img)
 }
 
 func handleGetPngImageById(w http.ResponseWriter, r *http.Request) {
