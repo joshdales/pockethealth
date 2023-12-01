@@ -17,8 +17,8 @@ func main() {
 
 	// Upload a DICOM image
 	router.Post("/image", handleDicomImageUpload)
-	// Return the image
-	router.Get("/image/{imageId}", handlePngImage)
+	// Return the image as a PNG
+	router.Get("/image/{imageId}", handleGetImageById)
 
 	err := http.ListenAndServe(":3333", router)
 	if err != nil {
@@ -85,4 +85,35 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handlePngImage(w http.ResponseWriter, r *http.Request) {}
+func handleGetImageById(w http.ResponseWriter, r *http.Request) {
+	imageId := chi.URLParam(r, "imageId")
+	patientId := getPatientIdForImage(imageId)
+	userId := r.Context().Value("userId").(string)
+	allowedRoles := make([]string, 2)
+	allowedRoles[0] = "clinician"
+	allowedRoles[1] = "patient"
+	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
+		http.Error(w, "You do not have access to this", http.StatusForbidden)
+		return
+	}
+	imagePath := fmt.Sprintf("images/%s.png", imageId)
+	image, err := os.ReadFile(imagePath)
+	if err != nil {
+		if !os.IsExist(err) {
+			http.Error(w, "Requested image does not exist", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(image)
+}
+
+func getPatientIdForImage(imageId string) string {
+	// TODO: implement some sort of DB to hold this information
+	// for now I'm just using the image id as the patient id
+	patientId := imageId
+	return patientId
+}
