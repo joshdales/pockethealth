@@ -87,7 +87,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img := db.CreateDicomImage(imgId, userId, patientId)
+	img := db.CreateDicomImage(imgId, userId, patientId, dicom.Dataset{})
 
 	dataset, err := dicom.Parse(file, 2<<20, nil)
 	if err != nil {
@@ -95,7 +95,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img = db.UpdateDicomImage(img, dataset)
+	img.HeaderAttributes = dataset
 
 	err = util.ConvertDicomToPngAndUpload(&dataset, imgId, patientId)
 	if err != nil {
@@ -117,7 +117,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If you had a DB you could just read that but as we don't I have to re-parse the file,
-	// and then I'm using the create & update function just to make things a little simpler.
+	// and then I'm using the create function just to make life a little simpler.
 	imagePath := fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imageId)
 	dataset, err := dicom.ParseFile(imagePath, nil)
 	if err != nil {
@@ -136,8 +136,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	img := db.CreateDicomImage(imageId, userId, patientId)
-	img = db.UpdateDicomImage(img, filteredDataset)
+	img := db.CreateDicomImage(imageId, userId, patientId, filteredDataset)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(img)

@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"image/png"
+	"io"
 	"mime/multipart"
 	"os"
 
@@ -15,15 +16,18 @@ import (
 
 // In an actual production env I'm sure this would upload to your Object Storage, but I'm just storing locally
 func UploadImage(file multipart.File, patientId string) (string, error) {
-	var fileData []byte
-	file.Read(fileData)
-
 	imageId := uuid.New()
 	filePath := fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imageId)
 
-	err := os.WriteFile(filePath, fileData, 0660)
+	imgFile, err := os.Create(filePath)
 	if err != nil {
-		return "", fmt.Errorf("Could not save file: %e", err)
+		return "", fmt.Errorf("Could not create file: %e", err)
+	}
+	defer imgFile.Close()
+
+	_, err = io.Copy(imgFile, file)
+	if err != nil {
+		return "", fmt.Errorf("Could not write image to file: %e", err)
 	}
 
 	return imageId.String(), nil
