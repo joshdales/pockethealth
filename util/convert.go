@@ -10,6 +10,7 @@ import (
 	"github.com/suyashkumar/dicom/pkg/tag"
 )
 
+// Convert the DICOM image to png and upload it (or just store it locally in this case)
 func ConvertDicomToPng(dataset *dicom.Dataset) error {
 	pixelDataElement, err := dataset.FindElementByTag(tag.PixelData)
 	if err != nil {

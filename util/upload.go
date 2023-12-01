@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// In an actual production env I'm sure this would upload to your Object Storage, but I'm just storing locally
 func UploadImage(file multipart.File, patientId string) (string, error) {
 	var fileData []byte
 	file.Read(fileData)
