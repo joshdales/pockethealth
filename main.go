@@ -79,13 +79,13 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	imageId, err := util.UploadImage(file, patientId)
+	imgId, err := util.UploadImage(file, patientId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	db.CreateDicomImage(imageId, userId, patientId)
+	img := db.CreateDicomImage(imgId, userId, patientId)
 
 	dataset, err := dicom.Parse(file, 2<<20, nil)
 	if err != nil {
@@ -93,15 +93,15 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db.UpdateDicomImage(imageId, dataset)
+	img = db.UpdateDicomImage(img, dataset)
 
-	err = util.ConvertDicomToPngAndUpload(&dataset, imageId, patientId)
+	err = util.ConvertDicomToPngAndUpload(&dataset, imgId, patientId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dataset)
+	json.NewEncoder(w).Encode(img)
 }
 
 func handleGetImageById(w http.ResponseWriter, r *http.Request) {
