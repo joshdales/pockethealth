@@ -46,6 +46,13 @@ func CreatePngImage(imageId string, dicomImageId string, patientId string) model
 	// - storage_url (string): Wherever we are saving these images
 	// - created_at (timestamp)
 	// - updated_at (timestamp)
+
+	// Originally I was going to use a shared primary key between this and the DicomImage, but
+	// after I realised that the pixel data can return an array of frames I thought that it
+	// might be better to make it have it's own id, so that you can have many pngs from one dicom.
+	// Maybe an incorrect assumption, but I don't really know enough about these images to know
+	// any better.
+
 	return model.PngImage{
 		Id:           imageId,
 		DicomImageId: dicomImageId,
