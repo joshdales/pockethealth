@@ -51,7 +51,7 @@ func userHasAccessToPatient(authedUserId string, permittedRoles []string, patien
 }
 
 func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(512)
+	err := r.ParseMultipartForm(2 << 20)
 	if err != nil {
 		http.Error(w, "Could not parse the form data", http.StatusBadRequest)
 	}
@@ -82,11 +82,13 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	err = os.Mkdir("images", 0750)
 	if err != nil && !os.IsExist(err) {
 		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+		return
 	}
 
 	err = os.WriteFile(filePath, fileData, 0660)
 	if err != nil {
 		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+		return
 	}
 }
 
