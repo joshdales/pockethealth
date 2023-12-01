@@ -93,6 +93,8 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db.UpdateDicomImage(imageId, dataset)
+
 	err = util.ConvertDicomToPngAndUpload(&dataset, imageId, patientId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
