@@ -24,8 +24,10 @@ func main() {
 
 	// Upload a DICOM image
 	router.Post("/image", handleDicomImageUpload)
+	// Return information about the DICOM image
+	router.Get("/image/{imageId}/dicom", handleGetPngImageById)
 	// Return the image as a PNG
-	router.Get("/image/{imageId}", handleGetImageById)
+	router.Get("/image/{imageId}/png", handleGetPngImageById)
 
 	err := http.ListenAndServe(":3333", router)
 	if err != nil {
@@ -104,13 +106,47 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(img)
 }
 
-func handleGetImageById(w http.ResponseWriter, r *http.Request) {
+func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 	imageId := chi.URLParam(r, "imageId")
 	patientId := db.GetPatientIdForPngImage(imageId)
 	userId := r.Context().Value("userId").(string)
-	allowedRoles := make([]string, 2)
-	allowedRoles[0] = "clinician"
-	allowedRoles[1] = "patient"
+	allowedRoles := []string{"clinician"}
+	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
+		http.Error(w, "You do not have access to this", http.StatusForbidden)
+		return
+	}
+
+	// If you had a DB you could just read that but as we don't I have to re-parse the file,
+	// and then I'm using the create & update function just to make things a little simpler.
+	imagePath := fmt.Sprintf("images/%s.dcm", imageId)
+	dataset, err := dicom.ParseFile(imagePath, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	filteredDataset := dicom.Dataset{
+		Elements: []*dicom.Element{},
+	}
+
+	for query := range r.URL.Query() {
+		for _, element := range dataset.Elements {
+			if string(rune(element.Tag.Group)) == query {
+				filteredDataset.Elements = append(filteredDataset.Elements, element)
+			}
+		}
+	}
+
+	img := db.CreateDicomImage(imageId, userId, patientId)
+	img = db.UpdateDicomImage(img, filteredDataset)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleGetPngImageById(w http.ResponseWriter, r *http.Request) {
+	imageId := chi.URLParam(r, "imageId")
+	patientId := db.GetPatientIdForPngImage(imageId)
+	userId := r.Context().Value("userId").(string)
+	allowedRoles := []string{"clinician", "patient"}
 	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
 		http.Error(w, "You do not have access to this", http.StatusForbidden)
 		return
