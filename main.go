@@ -130,6 +130,8 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	w.WriteHeader(http.StatusCreated)
+
 }
 
 func handleGetImageById(w http.ResponseWriter, r *http.Request) {
