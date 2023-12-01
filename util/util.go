@@ -5,11 +5,12 @@ import (
 	"image/png"
 	"mime/multipart"
 	"os"
-	"pockethealth/dicom/db"
 
 	"github.com/google/uuid"
 	"github.com/suyashkumar/dicom"
 	"github.com/suyashkumar/dicom/pkg/tag"
+
+	"pockethealth/dicom/db"
 )
 
 // In an actual production env I'm sure this would upload to your Object Storage, but I'm just storing locally
@@ -18,14 +19,9 @@ func UploadImage(file multipart.File, patientId string) (string, error) {
 	file.Read(fileData)
 
 	imageId := uuid.New()
-	filePath := fmt.Sprintf("images/%s.dcm", imageId)
+	filePath := fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imageId)
 
-	err := os.Mkdir("images", 0750)
-	if err != nil && !os.IsExist(err) {
-		return "", fmt.Errorf("Couldn't create images folder: %e", err)
-	}
-
-	err = os.WriteFile(filePath, fileData, 0660)
+	err := os.WriteFile(filePath, fileData, 0660)
 	if err != nil {
 		return "", fmt.Errorf("Could not save file: %e", err)
 	}
@@ -50,7 +46,7 @@ func ConvertDicomToPngAndUpload(dataset *dicom.Dataset, dicomImgId string, patie
 
 		imgId := uuid.New()
 
-		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", imgId))
+		imgFile, err := os.Create(fmt.Sprintf("%s/%s.png", db.StorageLocation, imgId))
 		if err != nil {
 			return fmt.Errorf("Could not create png image file: %e", err)
 		}

@@ -2,11 +2,14 @@ package db
 
 import (
 	"fmt"
-	"pockethealth/dicom/model"
 	"time"
 
 	"github.com/suyashkumar/dicom"
+
+	"pockethealth/dicom/model"
 )
+
+const StorageLocation string = "images"
 
 // I'm assuming that all the user data is going to be coming from a separate microservice,
 // so I'm storing the user ids but I don't expect that this service will have much more
@@ -28,7 +31,7 @@ func CreateDicomImage(imageId string, uploaderId string, patientId string) model
 		Id:               imageId,
 		UploadedByUserId: uploaderId,
 		PatientId:        patientId,
-		StorageUrl:       fmt.Sprintf("images/%s.dcm", imageId),
+		StorageUrl:       fmt.Sprintf("%s/%s.dcm", StorageLocation, imageId),
 		CreatedAt:        time.Now(),
 	}
 }
@@ -54,7 +57,7 @@ func CreatePngImage(imageId string, dicomImageId string, patientId string) model
 		Id:           imageId,
 		DicomImageId: dicomImageId,
 		PatientId:    patientId,
-		StorageUrl:   fmt.Sprintf("images/%s.png", imageId),
+		StorageUrl:   fmt.Sprintf("%s/%s.png", StorageLocation, imageId),
 		CreatedAt:    time.Now(),
 	}
 }

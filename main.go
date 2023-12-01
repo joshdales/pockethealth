@@ -118,7 +118,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 
 	// If you had a DB you could just read that but as we don't I have to re-parse the file,
 	// and then I'm using the create & update function just to make things a little simpler.
-	imagePath := fmt.Sprintf("images/%s.dcm", imageId)
+	imagePath := fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imageId)
 	dataset, err := dicom.ParseFile(imagePath, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -152,7 +152,7 @@ func handleGetPngImageById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imagePath := fmt.Sprintf("images/%s.png", imageId)
+	imagePath := fmt.Sprintf("%s/%s.png", db.StorageLocation, imageId)
 	image, err := os.ReadFile(imagePath)
 	if err != nil {
 		if os.IsNotExist(err) {
