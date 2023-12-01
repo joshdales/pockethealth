@@ -96,10 +96,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// I'm sure that you can probably do this with the file stream but I don't know Go well enough to do it.
-	// So I'm using the example from https://pkg.go.dev/github.com/suyashkumar/dicom@v1.0.7#example-package-ReadFile
-	// as a base for how to do this.
-	dataset, err := dicom.ParseFile(filePath, nil)
+	dataset, err := dicom.Parse(file, 2<<20, nil)
 	if err != nil {
 		http.Error(w, "Could not find Image to parse", http.StatusInternalServerError)
 		return
