@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 	"github.com/suyashkumar/dicom"
 	"github.com/suyashkumar/dicom/pkg/tag"
@@ -15,7 +16,8 @@ import (
 
 func main() {
 	router := chi.NewRouter()
-
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
 	router.Use(checkUserAuthentication)
 
 	// Upload a DICOM image
@@ -35,9 +37,9 @@ func checkUserAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Call whatever service we need to make sure that you have access
 		// Store the authed user's id in context
-		ctx := context.WithValue(r.Context(), "userId", uuid.New())
-		r.WithContext(ctx)
-		next.ServeHTTP(w, r)
+		userId := uuid.New().String()
+		ctx := context.WithValue(r.Context(), "userId", userId)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -84,13 +86,13 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 
 	err = os.Mkdir("images", 0750)
 	if err != nil && !os.IsExist(err) {
-		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+		http.Error(w, "Couldn't create images folder", http.StatusInternalServerError)
 		return
 	}
 
 	err = os.WriteFile(filePath, fileData, 0660)
 	if err != nil {
-		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+		http.Error(w, "Could not save file", http.StatusInternalServerError)
 		return
 	}
 
@@ -99,7 +101,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	// as a base for how to do this.
 	dataset, err := dicom.ParseFile(filePath, nil)
 	if err != nil {
-		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+		http.Error(w, "Could not find Image to parse", http.StatusInternalServerError)
 		return
 	}
 	pixelDataElement, err := dataset.FindElementByTag(tag.PixelData)
@@ -114,7 +116,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not get image frame", http.StatusInternalServerError)
 			return
 		}
-		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", imageId))
+		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", uuid.New()))
 		if err != nil {
 			http.Error(w, "Could not create png image file", http.StatusInternalServerError)
 			return
