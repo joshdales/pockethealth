@@ -70,6 +70,10 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	var fileData []byte
+	file.Read(fileData)
+
 	defer file.Close()
 
 	imageId := uuid.New()
@@ -79,7 +83,8 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	if err != nil && !os.IsExist(err) {
 		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
 	}
-	err = os.WriteFile(filePath, file)
+
+	err = os.WriteFile(filePath, fileData, 0660)
 	if err != nil {
 		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
 	}
