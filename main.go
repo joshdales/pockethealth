@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"image/png"
 	"net/http"
 	"os"
 
@@ -11,7 +10,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 	"github.com/suyashkumar/dicom"
-	"github.com/suyashkumar/dicom/pkg/tag"
+
+	"pockethealth/dicom/util"
 )
 
 func main() {
@@ -75,59 +75,23 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	var fileData []byte
-	file.Read(fileData)
-
 	defer file.Close()
 
-	imageId := uuid.New()
-	filePath := fmt.Sprintf("images/%s.dcm", imageId)
-
-	err = os.Mkdir("images", 0750)
-	if err != nil && !os.IsExist(err) {
-		http.Error(w, "Couldn't create images folder", http.StatusInternalServerError)
-		return
-	}
-
-	err = os.WriteFile(filePath, fileData, 0660)
+	_, err = util.UploadImage(file, patientId)
 	if err != nil {
-		http.Error(w, "Could not save file", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	dataset, err := dicom.Parse(file, 2<<20, nil)
 	if err != nil {
-		http.Error(w, "Could not find Image to parse", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	pixelDataElement, err := dataset.FindElementByTag(tag.PixelData)
+
+	err = util.ConvertDicomToPng(&dataset)
 	if err != nil {
-		http.Error(w, "Could not get pixel data for image", http.StatusInternalServerError)
-		return
-	}
-	pixelDataInfo := dicom.MustGetPixelDataInfo(pixelDataElement.Value)
-	for _, frame := range pixelDataInfo.Frames {
-		img, err := frame.GetImage()
-		if err != nil {
-			http.Error(w, "Could not get image frame", http.StatusInternalServerError)
-			return
-		}
-		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", uuid.New()))
-		if err != nil {
-			http.Error(w, "Could not create png image file", http.StatusInternalServerError)
-			return
-		}
-		err = png.Encode(imgFile, img)
-		if err != nil {
-			http.Error(w, "Could not encode png image", http.StatusInternalServerError)
-			return
-		}
-		err = imgFile.Close()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusCreated)
