@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -61,6 +62,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	allowedRoles[0] = "clinician"
 	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
 		http.Error(w, "You do not have access to this", http.StatusForbidden)
+		return
 	}
 
 	file, _, err := r.FormFile("image")
@@ -69,6 +71,18 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
+
+	imageId := uuid.New()
+	filePath := fmt.Sprintf("images/%s.dcm", imageId)
+
+	err = os.Mkdir("images", 0750)
+	if err != nil && !os.IsExist(err) {
+		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+	}
+	err = os.WriteFile(filePath, file)
+	if err != nil {
+		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+	}
 }
 
 func handlePngImage(w http.ResponseWriter, r *http.Request) {}
