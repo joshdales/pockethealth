@@ -16,6 +16,13 @@ import (
 	"pockethealth/dicom/util"
 )
 
+type UserRole = string
+
+const (
+	Patient   UserRole = "patient"
+	Clinician UserRole = "clinician"
+)
+
 func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
@@ -49,7 +56,7 @@ func checkUserAuthentication(next http.Handler) http.Handler {
 
 // Again I'm assuming that this is going to be handled by a separate
 // microservice and I'm not actually going to implement it.
-func userHasAccessToPatient(authedUserId string, permittedRoles []string, patientId string) bool {
+func userHasAccessToPatient(authedUserId string, permittedRoles []UserRole, patientId string) bool {
 	// Check that the user has access to the patient, and the role for that endpoint.
 	// - If they are a patient then they must either be that patient or their guardian
 	// - If they are a clinician then they should have access to that patient,
@@ -67,8 +74,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 
 	patientId := r.FormValue("patientId")
 	userId := r.Context().Value("userId").(string)
-	allowedRoles := make([]string, 1)
-	allowedRoles[0] = "clinician"
+	allowedRoles := []UserRole{Clinician}
 	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
 		http.Error(w, "You do not have access to this", http.StatusForbidden)
 		return
@@ -110,7 +116,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 	imageId := chi.URLParam(r, "imageId")
 	patientId := db.GetPatientIdForPngImage(imageId)
 	userId := r.Context().Value("userId").(string)
-	allowedRoles := []string{"clinician"}
+	allowedRoles := []UserRole{Clinician}
 	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
 		http.Error(w, "You do not have access to this", http.StatusForbidden)
 		return
@@ -146,7 +152,7 @@ func handleGetPngImageById(w http.ResponseWriter, r *http.Request) {
 	imageId := chi.URLParam(r, "imageId")
 	patientId := db.GetPatientIdForPngImage(imageId)
 	userId := r.Context().Value("userId").(string)
-	allowedRoles := []string{"clinician", "patient"}
+	allowedRoles := []UserRole{Clinician, Patient}
 	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
 		http.Error(w, "You do not have access to this", http.StatusForbidden)
 		return
