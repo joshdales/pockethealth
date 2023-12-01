@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/png"
 	"os"
+	"pockethealth/dicom/db"
 
 	"github.com/google/uuid"
 	"github.com/suyashkumar/dicom"
@@ -11,7 +12,7 @@ import (
 )
 
 // Convert the DICOM image to png and upload it (or just store it locally in this case)
-func ConvertDicomToPng(dataset *dicom.Dataset) error {
+func ConvertDicomToPngAndUpload(dataset *dicom.Dataset, dicomImgId string, patientId string) error {
 	pixelDataElement, err := dataset.FindElementByTag(tag.PixelData)
 	if err != nil {
 		return fmt.Errorf("Could not get pixel data for image: %e", err)
@@ -25,7 +26,9 @@ func ConvertDicomToPng(dataset *dicom.Dataset) error {
 			return fmt.Errorf("Could not get image frame: %e", err)
 		}
 
-		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", uuid.New()))
+		imgId := uuid.New()
+
+		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", imgId))
 		if err != nil {
 			return fmt.Errorf("Could not create png image file: %e", err)
 		}
@@ -39,6 +42,8 @@ func ConvertDicomToPng(dataset *dicom.Dataset) error {
 		if err != nil {
 			return err
 		}
+
+		db.CreatePngImage(imgId.String(), dicomImgId, patientId)
 	}
 
 	return nil

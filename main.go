@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/suyashkumar/dicom"
 
+	"pockethealth/dicom/db"
 	"pockethealth/dicom/util"
 )
 
@@ -77,11 +78,13 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	_, err = util.UploadImage(file, patientId)
+	imageId, err := util.UploadImage(file, patientId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	db.CreateDicomImage(imageId, userId, patientId)
 
 	dataset, err := dicom.Parse(file, 2<<20, nil)
 	if err != nil {
@@ -89,7 +92,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = util.ConvertDicomToPng(&dataset)
+	err = util.ConvertDicomToPngAndUpload(&dataset, imageId, patientId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -100,7 +103,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 
 func handleGetImageById(w http.ResponseWriter, r *http.Request) {
 	imageId := chi.URLParam(r, "imageId")
-	patientId := getPatientIdForImage(imageId)
+	patientId := db.GetPatientIdForPngImage(imageId)
 	userId := r.Context().Value("userId").(string)
 	allowedRoles := make([]string, 2)
 	allowedRoles[0] = "clinician"
@@ -123,11 +126,4 @@ func handleGetImageById(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(image)
-}
-
-func getPatientIdForImage(imageId string) string {
-	// TODO: implement some sort of DB to hold this information
-	// for now I'm just using the image id as the patient id
-	patientId := imageId
-	return patientId
 }
