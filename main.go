@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"image/png"
 	"net/http"
 	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/suyashkumar/dicom"
+	"github.com/suyashkumar/dicom/pkg/tag"
 )
 
 func main() {
@@ -56,7 +59,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not parse the form data", http.StatusBadRequest)
 	}
 
-	patientId := r.Form.Get("patientId")
+	patientId := r.FormValue("patientId")
 	userId := r.Context().Value("userId").(string)
 	allowedRoles := make([]string, 1)
 	allowedRoles[0] = "clinician"
@@ -90,6 +93,44 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
 		return
 	}
+
+	// I'm sure that you can probably do this with the file stream but I don't know Go well enough to do it.
+	// So I'm using the example from https://pkg.go.dev/github.com/suyashkumar/dicom@v1.0.7#example-package-ReadFile
+	// as a base for how to do this.
+	dataset, err := dicom.ParseFile(filePath, nil)
+	if err != nil {
+		http.Error(w, "Uh oh! Something has gone wrong", http.StatusInternalServerError)
+		return
+	}
+	pixelDataElement, err := dataset.FindElementByTag(tag.PixelData)
+	if err != nil {
+		http.Error(w, "Could not get pixel data for image", http.StatusInternalServerError)
+		return
+	}
+	pixelDataInfo := dicom.MustGetPixelDataInfo(pixelDataElement.Value)
+	for _, frame := range pixelDataInfo.Frames {
+		img, err := frame.GetImage()
+		if err != nil {
+			http.Error(w, "Could not get image frame", http.StatusInternalServerError)
+			return
+		}
+		imgFile, err := os.Create(fmt.Sprintf("images/%s.png", imageId))
+		if err != nil {
+			http.Error(w, "Could not create png image file", http.StatusInternalServerError)
+			return
+		}
+		err = png.Encode(imgFile, img)
+		if err != nil {
+			http.Error(w, "Could not encode png image", http.StatusInternalServerError)
+			return
+		}
+		err = imgFile.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 }
 
 func handleGetImageById(w http.ResponseWriter, r *http.Request) {
