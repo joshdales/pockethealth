@@ -131,11 +131,15 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var filteredDataset []*dicom.Element
-
-	for query := range r.URL.Query() {
-		for _, element := range dataset.Elements {
-			if fmt.Sprintf("%s", element.Tag) == query {
-				filteredDataset = append(filteredDataset, element)
+	// If no query is provided then return all the elements
+	if len(r.URL.Query()) < 1 {
+		filteredDataset = dataset.Elements
+	} else {
+		for query := range r.URL.Query() {
+			for _, element := range dataset.Elements {
+				if fmt.Sprintf("%s", element.Tag) == query {
+					filteredDataset = append(filteredDataset, element)
+				}
 			}
 		}
 	}
