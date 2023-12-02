@@ -1,4 +1,4 @@
-Run with `go run .` you can then make requests to `localhost:3333`.
+Install and run, you can then make requests to `localhost:3333`.
 
 There are 3 endpoints that you can call
 1. `POST /image` The payload should include
