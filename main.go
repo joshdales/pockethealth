@@ -95,7 +95,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 
 	img := db.CreateDicomImage(imgId, userId, patientId, dicom.Dataset{})
 
-	dataset, err := dicom.Parse(file, 2<<20, nil)
+	dataset, err := dicom.ParseFile(fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imgId), nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

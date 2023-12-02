@@ -18,6 +18,7 @@ import (
 func UploadImage(file multipart.File, patientId string) (string, error) {
 	imageId := uuid.New()
 	filePath := fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imageId)
+	defer file.Close()
 
 	imgFile, err := os.Create(filePath)
 	if err != nil {
