@@ -32,7 +32,7 @@ func main() {
 	// Upload a DICOM image
 	router.Post("/image", handleDicomImageUpload)
 	// Return information about the DICOM image
-	router.Get("/image/{imageId}/header_attributes", handleGetPngImageById)
+	router.Get("/image/{imageId}/header_attributes", handleGetDicomImageById)
 	// Return PNG version of the image
 	router.Get("/image/{imageId}/png", handleGetPngImageById)
 
