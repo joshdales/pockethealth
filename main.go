@@ -134,7 +134,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 
 	for query := range r.URL.Query() {
 		for _, element := range dataset.Elements {
-			if string(rune(element.Tag.Group)) == query {
+			if fmt.Sprintf("%s", element.Tag) == query {
 				filteredDataset = append(filteredDataset, element)
 			}
 		}
@@ -143,7 +143,7 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 	img := db.CreateDicomImage(imageId, userId, patientId, filteredDataset)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(img)
+	json.NewEncoder(w).Encode(img.HeaderAttributes)
 }
 
 func handleGetPngImageById(w http.ResponseWriter, r *http.Request) {
