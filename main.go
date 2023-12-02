@@ -72,7 +72,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not parse the form data", http.StatusBadRequest)
 	}
 
-	patientId := r.FormValue("patientId")
+	patientId := r.FormValue("patient_id")
 	userId := r.Context().Value("userId").(string)
 	allowedRoles := []UserRole{Clinician}
 	if !userHasAccessToPatient(userId, allowedRoles, patientId) {
