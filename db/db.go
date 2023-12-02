@@ -16,7 +16,7 @@ const StorageLocation string = "images"
 // information about them. That will need to be fetched from somewhere else.
 
 // Not implementing this, but writing out probably what it should include.
-func CreateDicomImage(imageId string, uploaderId string, patientId string, dataset dicom.Dataset) model.DicomImage {
+func CreateDicomImage(imageId string, uploaderId string, patientId string, headerAttributes []*dicom.Element) model.DicomImage {
 	// I'm imagining that the table for this is going to be something like
 	// - id (uuid): Primary Key use the imageId
 	// - uploaded_by_user_id (uuid): The authed user that uploaded the image: uploaderId
@@ -32,7 +32,7 @@ func CreateDicomImage(imageId string, uploaderId string, patientId string, datas
 		UploadedByUserId: uploaderId,
 		PatientId:        patientId,
 		StorageUrl:       fmt.Sprintf("%s/%s.dcm", StorageLocation, imageId),
-		HeaderAttributes: dataset,
+		HeaderAttributes: headerAttributes,
 		CreatedAt:        time.Now(),
 	}
 }

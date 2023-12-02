@@ -93,7 +93,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img := db.CreateDicomImage(imgId, userId, patientId, dicom.Dataset{})
+	img := db.CreateDicomImage(imgId, userId, patientId, nil)
 
 	dataset, err := dicom.ParseFile(fmt.Sprintf("%s/%s.dcm", db.StorageLocation, imgId), nil)
 	if err != nil {
@@ -101,7 +101,7 @@ func handleDicomImageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img.HeaderAttributes = dataset
+	img.HeaderAttributes = dataset.Elements
 
 	err = util.ConvertDicomToPngAndUpload(&dataset, imgId, patientId)
 	if err != nil {
@@ -130,14 +130,12 @@ func handleGetDicomImageById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	filteredDataset := dicom.Dataset{
-		Elements: []*dicom.Element{},
-	}
+	var filteredDataset []*dicom.Element
 
 	for query := range r.URL.Query() {
 		for _, element := range dataset.Elements {
 			if string(rune(element.Tag.Group)) == query {
-				filteredDataset.Elements = append(filteredDataset.Elements, element)
+				filteredDataset = append(filteredDataset, element)
 			}
 		}
 	}

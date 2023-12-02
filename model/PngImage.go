@@ -10,5 +10,5 @@ type PngImage struct {
 	PatientId    string    `json:"patient_id"`
 	StorageUrl   string    `json:"storage_url"`
 	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	UpdatedAt    time.Time `json:"updated_at,omitempty"`
 }
