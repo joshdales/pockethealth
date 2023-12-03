@@ -30,11 +30,11 @@ func main() {
 	router.Use(checkUserAuthentication)
 
 	// Upload a DICOM image
-	router.Post("/image", handleDicomImageUpload)
+	router.Post("/dicom", handleDicomImageUpload)
 	// Return information about the DICOM image
-	router.Get("/image/{imageId}/header_attributes", handleGetDicomImageById)
+	router.Get("/dicom/{imageId}/header_attributes", handleGetDicomImageById)
 	// Return PNG version of the image
-	router.Get("/image/{imageId}/png", handleGetPngImageById)
+	router.Get("/png/{imageId}/image", handleGetPngImageById)
 
 	err := http.ListenAndServe(":3333", router)
 	if err != nil {
